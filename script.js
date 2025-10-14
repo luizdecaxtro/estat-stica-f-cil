@@ -1,4 +1,52 @@
 function calcular() {
+  // Amplitude
+const amplitude = Math.max(...numeros) - Math.min(...numeros);
+
+// Quartis
+function calcularQuartil(q) {
+  const pos = (q * (n + 1)) / 4;
+  const i = Math.floor(pos) - 1;
+  const f = pos - Math.floor(pos);
+  if (i < 0) return ordenados[0];
+  if (i >= n - 1) return ordenados[n - 1];
+  return ordenados[i] + f * (ordenados[i + 1] - ordenados[i]);
+}
+const Q1 = calcularQuartil(1);
+const Q3 = calcularQuartil(3);
+
+// Variância amostral
+const varianciaAmostral = numeros.reduce((acc, val) => acc + Math.pow(val - media, 2), 0) / (n - 1);
+
+// Adiciona ao HTML
+document.getElementById("saida").innerHTML += `
+  <p><strong>Amplitude:</strong> ${amplitude}</p>
+  <p><strong>Quartil 1 (Q1):</strong> ${Q1.toFixed(2)}</p>
+  <p><strong>Quartil 3 (Q3):</strong> ${Q3.toFixed(2)}</p>
+  <p><strong>Variância Amostral:</strong> ${varianciaAmostral.toFixed(2)}</p>
+`;
+
+// Gráfico de barras
+const ctx = document.getElementById("grafico").getContext("2d");
+const contagem = {};
+numeros.forEach(num => contagem[num] = (contagem[num] || 0) + 1);
+new Chart(ctx, {
+  type: 'bar',
+  data: {
+    labels: Object.keys(contagem),
+    datasets: [{
+      label: 'Frequência',
+      data: Object.values(contagem),
+      backgroundColor: 'rgba(54, 162, 235, 0.6)'
+    }]
+  },
+  options: {
+    responsive: true,
+    scales: {
+      y: { beginAtZero: true }
+    }
+  }
+});
+
   const entrada = document.getElementById("dados").value;
   const numeros = entrada.split(",").map(n => parseFloat(n.trim())).filter(n => !isNaN(n));
   if (numeros.length === 0) return alert("Insira números válidos!");
