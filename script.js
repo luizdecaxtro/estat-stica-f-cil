@@ -89,9 +89,13 @@ function lerExplicacao() {
     A média é a soma dos valores dividida pela quantidade.
     A mediana é o valor central dos dados ordenados.
     A moda é o valor que mais se repete.
-    O desvio padrão mede a dispersão dos dados em relação à média.
+    O desvio padrão mede a dispersão dos dados.
+    A amplitude é a diferença entre o maior e o menor valor.
+    Os quartis dividem os dados em quatro partes iguais.
+    A variância amostral é a média dos quadrados das diferenças em relação à média, dividida por n menos 1.
   `;
   const fala = new SpeechSynthesisUtterance(texto);
   fala.lang = "pt-BR";
   speechSynthesis.speak(fala);
 }
+
