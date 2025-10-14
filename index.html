@@ -1,0 +1,395 @@
+import React, { useState, useEffect } from 'react';
+import { Volume2, Square, Play, BookOpen, Calculator } from 'lucide-react';
+
+export default function StatsAudioExplainer() {
+  const [speaking, setSpeaking] = useState(false);
+  const [selectedTopic, setSelectedTopic] = useState('variance');
+  const [voices, setVoices] = useState([]);
+  const [selectedVoice, setSelectedVoice] = useState(null);
+  const [showExample, setShowExample] = useState(false);
+
+  useEffect(() => {
+    const loadVoices = () => {
+      const availableVoices = window.speechSynthesis.getVoices();
+      
+      const qualityVoices = availableVoices.filter(v => {
+        const name = v.name.toLowerCase();
+        const lang = v.lang.toLowerCase();
+        
+        return (lang.startsWith('pt') || lang.includes('br')) &&
+               (name.includes('google') || 
+                name.includes('microsoft') || 
+                name.includes('luciana') ||
+                name.includes('premium') ||
+                name.includes('natural') ||
+                v.localService === false);
+      });
+      
+      const voicesToUse = qualityVoices.length > 0 ? qualityVoices : 
+                          availableVoices.filter(v => v.lang.startsWith('pt'));
+      
+      setVoices(voicesToUse.length > 0 ? voicesToUse : availableVoices);
+      
+      if (voicesToUse.length > 0) {
+        const preferredVoice = voicesToUse.find(v => 
+          v.name.toLowerCase().includes('google') || 
+          v.name.toLowerCase().includes('microsoft')
+        ) || voicesToUse[0];
+        setSelectedVoice(preferredVoice);
+      } else if (availableVoices.length > 0) {
+        setSelectedVoice(availableVoices[0]);
+      }
+    };
+
+    loadVoices();
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+  }, []);
+
+  const topics = {
+    variance: {
+      title: 'Variância',
+      formula: 'σ² = Σ(xᵢ-μ)²/N  |  s² = Σ(xᵢ-x̄)²/(n-1)',
+      explanation: 'A variância mede a dispersão dos dados. Existem DUAS fórmulas: Variância POPULACIONAL (σ²) divide por N quando temos TODA a população. Variância AMOSTRAL (s²) divide por n-1 quando temos apenas uma AMOSTRA, para corrigir o viés. O n-1 são os graus de liberdade.',
+      exampleTitle: 'Exemplo: Notas - Populacional vs Amostral',
+      exampleData: 'Notas: 7, 8, 6, 9, 7, 8, 7',
+      tableData: [
+        ['i', 'xi', 'xi - μ', '(xi - μ)²'],
+        ['1', '7', '-0,43', '0,18'],
+        ['2', '8', '0,57', '0,32'],
+        ['3', '6', '-1,43', '2,04'],
+        ['4', '9', '1,57', '2,46'],
+        ['5', '7', '-0,43', '0,18'],
+        ['6', '8', '0,57', '0,32'],
+        ['7', '7', '-0,43', '0,18'],
+        ['Σ', '52', '0', '5,68']
+      ],
+      steps: 'PASSO 1: Média: (7+8+6+9+7+8+7)/7 = 52/7 = 7,43. PASSO 2: Desvios: 7-7,43=-0,43; 8-7,43=0,57; 6-7,43=-1,43; 9-7,43=1,57; etc. PASSO 3: Quadrados: 0,18; 0,32; 2,04; 2,46; 0,18; 0,32; 0,18. PASSO 4: Soma: 5,68. PASSO 5A: Variância POPULACIONAL: σ²=5,68/7=0,81. PASSO 5B: Variância AMOSTRAL: s²=5,68/(7-1)=5,68/6=0,95. DIFERENÇA: A amostral é maior! Use populacional se estes são TODOS os alunos. Use amostral se é uma AMOSTRA de uma turma maior.',
+      audio: 'Vamos calcular AMBAS as variâncias de 7 notas. Primeiro, a média: somamos 7, 8, 6, 9, 7, 8 e 7, dando 52. Dividimos por 7: média 7,43. Segundo, calculamos os desvios: 7 menos 7,43 igual a menos 0,43. 8 menos 7,43 igual a 0,57. 6 menos 7,43 igual a menos 1,43. 9 menos 7,43 igual a 1,57. E assim por diante. Terceiro, elevamos cada desvio ao quadrado: 0,18; 0,32; 2,04; 2,46; 0,18; 0,32; 0,18. Quarto, somamos todos: 5,68. AGORA ATENÇÃO! Temos DUAS opções: VARIÂNCIA POPULACIONAL: dividimos por N igual a 7. Resultado: 0,81. Use quando temos TODA a população. VARIÂNCIA AMOSTRAL: dividimos por n menos 1 igual a 6. Resultado: 0,95. Use quando temos uma AMOSTRA. A amostral é sempre maior porque corrige o viés da amostra usando n menos 1, os graus de liberdade.',
+      color: 'from-blue-500 to-purple-600'
+    },
+    standardDev: {
+      title: 'Desvio Padrão',
+      formula: 'σ = √(Σ(xᵢ-μ)²/N)  |  s = √(Σ(xᵢ-x̄)²/(n-1))',
+      explanation: 'O desvio padrão é a raiz quadrada da variância. Tem a mesma unidade dos dados originais. DESVIO POPULACIONAL (σ) usa N no denominador. DESVIO AMOSTRAL (s) usa n-1. A escolha depende se você tem toda a população ou apenas uma amostra.',
+      exampleTitle: 'Exemplo: Temperaturas em 7 Dias',
+      exampleData: 'Temperaturas: 22, 24, 21, 25, 23, 22, 24°C',
+      tableData: [
+        ['Dia', 'Temp', 'Desvio', 'Desvio²'],
+        ['1', '22', '-1', '1'],
+        ['2', '24', '1', '1'],
+        ['3', '21', '-2', '4'],
+        ['4', '25', '2', '4'],
+        ['5', '23', '0', '0'],
+        ['6', '22', '-1', '1'],
+        ['7', '24', '1', '1'],
+        ['Σ', '161', '0', '12']
+      ],
+      steps: 'PASSO 1: Média = 161/7 = 23°C. PASSO 2: Desvios: -1, 1, -2, 2, 0, -1, 1. PASSO 3: Quadrados: 1, 1, 4, 4, 0, 1, 1. PASSO 4: Soma = 12. PASSO 5A: Variância POPULACIONAL = 12/7 = 1,714. PASSO 5B: Variância AMOSTRAL = 12/6 = 2,00. PASSO 6A: Desvio Padrão POPULACIONAL = √1,714 = 1,31°C. PASSO 6B: Desvio Padrão AMOSTRAL = √2,00 = 1,41°C. QUANDO USAR: Populacional se são TODAS as temperaturas do período. Amostral se é uma AMOSTRA de dias.',
+      audio: 'Calculando AMBOS os desvios padrão de temperaturas. Média: 161 dividido por 7 igual a 23 graus. Desvios: menos 1, mais 1, menos 2, mais 2, zero, menos 1, mais 1. Quadrados: 1, 1, 4, 4, 0, 1, 1. Soma: 12. AGORA CALCULAMOS AS DUAS VARIÂNCIAS: POPULACIONAL: 12 dividido por 7 igual a 1,714. AMOSTRAL: 12 dividido por 6 igual a 2,00. AGORA OS DESVIOS PADRÃO: POPULACIONAL: raiz de 1,714 igual a 1,31 graus. AMOSTRAL: raiz de 2,00 igual a 1,41 graus. A diferença é de 0,1 grau. Use o populacional se estes 7 dias são TODOS os dias que você quer analisar. Use o amostral se estes 7 dias são uma AMOSTRA de um período maior, como representantes de um mês inteiro.',
+      color: 'from-green-500 to-teal-600'
+    },
+    freqSimple: {
+      title: 'Frequência Simples',
+      formula: 'fi = freq. absoluta | fr = fi/n',
+      explanation: 'Organiza dados contando quantas vezes cada valor aparece. Frequência absoluta é a contagem. Frequência relativa é a proporção do total.',
+      exampleTitle: 'Exemplo: Notas de 20 Alunos',
+      exampleData: 'Notas: 5,6,7,7,6,8,7,9,6,7,8,7,6,7,8,9,7,8,7,6',
+      tableData: [
+        ['Nota', 'fi', 'fr', 'fr%', 'Fi', 'Fr%'],
+        ['5', '1', '0,05', '5%', '1', '5%'],
+        ['6', '5', '0,25', '25%', '6', '30%'],
+        ['7', '8', '0,40', '40%', '14', '70%'],
+        ['8', '4', '0,20', '20%', '18', '90%'],
+        ['9', '2', '0,10', '10%', '20', '100%'],
+        ['Total', '20', '1,00', '100%', '', '']
+      ],
+      steps: 'PASSO 1: Valores únicos: 5,6,7,8,9. PASSO 2: Contar frequências: nota 5 aparece 1 vez; nota 6 aparece 5 vezes; nota 7 aparece 8 vezes; nota 8 aparece 4 vezes; nota 9 aparece 2 vezes. Total: 20. PASSO 3: Frequência relativa: 1/20=0,05; 5/20=0,25; 8/20=0,40; 4/20=0,20; 2/20=0,10. PASSO 4: Percentual: 5%, 25%, 40%, 20%, 10%. PASSO 5: Acumulada: 1, 6, 14, 18, 20. INTERPRETAÇÃO: Moda é 7 com 40%. 70% tiraram até 7.',
+      audio: 'Construindo tabela de frequência simples. Identificamos valores: 5, 6, 7, 8 e 9. Contamos: nota 5 aparece 1 vez. Nota 6 aparece 5 vezes. Nota 7 aparece 8 vezes, a mais frequente. Nota 8 aparece 4 vezes. Nota 9 aparece 2 vezes. Total: 20 alunos. Frequência relativa: 1 dividido 20 igual 0,05. 5 dividido 20 igual 0,25. 8 dividido 20 igual 0,40. 4 dividido 20 igual 0,20. 2 dividido 20 igual 0,10. Em percentual: 5%, 25%, 40%, 20% e 10%. Frequência acumulada: 1, 6, 14, 18 e 20. A moda é 7 com 40% dos alunos.',
+      color: 'from-cyan-500 to-blue-600'
+    },
+    freqInterval: {
+      title: 'Frequência por Intervalos',
+      formula: 'h = amplitude / k | k = √n',
+      explanation: 'Agrupa dados em classes. Número de classes pela raiz de n. Amplitude de classe é amplitude total dividida por k. Usado para muitos valores diferentes.',
+      exampleTitle: 'Exemplo: Alturas de 30 Pessoas',
+      exampleData: 'Alturas: 150 a 192 cm (30 pessoas)',
+      tableData: [
+        ['Classe', 'Intervalo', 'xi', 'fi', 'fr%', 'Fi'],
+        ['1', '150⊢158', '154', '4', '13,3%', '4'],
+        ['2', '158⊢166', '162', '6', '20,0%', '10'],
+        ['3', '166⊢174', '170', '8', '26,7%', '18'],
+        ['4', '174⊢182', '178', '7', '23,3%', '25'],
+        ['5', '182⊢190', '186', '4', '13,3%', '29'],
+        ['6', '190⊢198', '194', '1', '3,3%', '30'],
+        ['Total', '', '', '30', '100%', '']
+      ],
+      steps: 'PASSO 1: Número de classes: k=√30≈6. PASSO 2: Amplitude total: 192-150=42cm. PASSO 3: Amplitude de classe: 42/6=7, usamos 8. PASSO 4: Intervalos: 150-158, 158-166, 166-174, 174-182, 182-190, 190-198. PASSO 5: Pontos médios: 154, 162, 170, 178, 186, 194. PASSO 6: Contar valores em cada intervalo: 4, 6, 8, 7, 4, 1. INTERPRETAÇÃO: Classe modal 166-174cm com 26,7%. Distribuição aproximadamente simétrica.',
+      audio: 'Construindo tabela por intervalos para 30 alturas. Passo 1: Número de classes, raiz de 30 é 6. Passo 2: Amplitude, 192 menos 150 igual 42 centímetros. Passo 3: Amplitude de classe, 42 dividido 6 igual 7, usamos 8. Passo 4: Criamos intervalos: 150 até 158, 158 até 166, 166 até 174, 174 até 182, 182 até 190, 190 até 198. Passo 5: Pontos médios: 154, 162, 170, 178, 186, 194. Passo 6: Contamos valores: primeira classe 4 pessoas, segunda 6, terceira 8 que é a maior, quarta 7, quinta 4, sexta 1. Classe modal é 166 a 174 centímetros com 26,7% das pessoas.',
+      color: 'from-teal-500 to-green-600'
+    },
+    mean: {
+      title: 'Média Aritmética',
+      formula: 'μ = Σxᵢ / N',
+      explanation: 'Medida de tendência central mais comum. Soma todos os valores e divide pelo total. Sensível a valores extremos (outliers).',
+      exampleTitle: 'Exemplo: Salários de 6 Funcionários',
+      exampleData: 'Salários: 3000, 3200, 3100, 3500, 3000, 15000',
+      tableData: [
+        ['Func.', 'Salário'],
+        ['1', 'R$ 3.000'],
+        ['2', 'R$ 3.200'],
+        ['3', 'R$ 3.100'],
+        ['4', 'R$ 3.500'],
+        ['5', 'R$ 3.000'],
+        ['6', 'R$ 15.000'],
+        ['Soma', 'R$ 30.800']
+      ],
+      steps: 'PASSO 1: Somar: 3000+3200+3100+3500+3000+15000=30800. PASSO 2: Dividir: 30800/6=5133,33. RESULTADO: Média R$ 5.133,33. ANÁLISE CRÍTICA: 5 funcionários ganham 3000-3500. 1 ganha 15000 (outlier). Sem outlier: média seria 3160. Com outlier: 5133, diferença de 62%! Mediana seria mais representativa: R$ 3.150.',
+      audio: 'Calculando média de salários. Somamos: 3000 mais 3200 dá 6200. Mais 3100 dá 9300. Mais 3500 dá 12800. Mais 3000 dá 15800. Mais 15000 dá 30800 reais. Dividimos por 6 funcionários: 30800 dividido 6 igual 5133 reais. Mas atenção! 5 funcionários ganham entre 3000 e 3500. Apenas 1 ganha 15000, um outlier que distorce a média. Sem ele, a média seria 3160 reais, muito diferente! A média aumentou 62% por causa de um único valor. Neste caso, a mediana de 3150 reais é mais representativa.',
+      color: 'from-orange-500 to-red-600'
+    },
+    median: {
+      title: 'Mediana',
+      formula: 'Md = valor central',
+      explanation: 'Valor que divide os dados ao meio. 50% abaixo, 50% acima. Se ímpar, é o valor central. Se par, média dos dois centrais. Menos sensível a outliers.',
+      exampleTitle: 'Exemplo: Tempo de Espera',
+      exampleData: 'Tempos: 5, 12, 8, 45, 10, 9, 7 minutos',
+      tableData: [
+        ['Original', 'Ordenado'],
+        ['5', '5'],
+        ['12', '7'],
+        ['8', '8'],
+        ['45', '9 ← MEDIANA'],
+        ['10', '10'],
+        ['9', '12'],
+        ['7', '45']
+      ],
+      steps: 'PASSO 1: Ordenar: 5,7,8,9,10,12,45. PASSO 2: n=7 (ímpar), mediana é posição (7+1)/2=4. PASSO 3: Mediana = 9 minutos. COMPARAÇÃO: Média=(5+7+8+9+10+12+45)/7=13,7 min. INTERPRETAÇÃO: Mediana 9 min é mais representativa que média 13,7 min, pois 45 é outlier.',
+      audio: 'Calculando mediana de tempos de espera: 5, 12, 8, 45, 10, 9 e 7 minutos. Primeiro, ordenamos: 5, 7, 8, 9, 10, 12, 45. Temos 7 valores, número ímpar. A mediana é o valor do meio, posição 4: 9 minutos. Comparando com a média: somando tudo dá 96, dividido por 7 dá 13,7 minutos. Veja a diferença! O valor 45 é um outlier que distorce a média. A mediana de 9 minutos representa melhor o tempo típico de espera.',
+      color: 'from-indigo-500 to-blue-600'
+    },
+    mode: {
+      title: 'Moda',
+      formula: 'Mo = valor mais frequente',
+      explanation: 'Valor que aparece mais vezes. Pode ter uma moda (unimodal), duas (bimodal) ou mais. Única medida para dados categóricos.',
+      exampleTitle: 'Exemplo: Tamanhos de Camiseta',
+      exampleData: 'Vendas: P,M,M,G,M,P,G,M,GG,M,G,M',
+      tableData: [
+        ['Tamanho', 'Frequência'],
+        ['P', '2'],
+        ['M', '6 ← MODA'],
+        ['G', '3'],
+        ['GG', '1'],
+        ['Total', '12']
+      ],
+      steps: 'PASSO 1: Contar frequências: P=2, M=6, G=3, GG=1. PASSO 2: Identificar maior: M com 6 vendas (50%). RESULTADO: Moda = M. INTERPRETAÇÃO: Tamanho M é o mais vendido. Distribuição unimodal. Estoque deve priorizar tamanho M.',
+      audio: 'Identificando moda de vendas de camisetas: P, M, M, G, M, P, G, M, GG, M, G, M. Contamos: P aparece 2 vezes. M aparece 6 vezes. G aparece 3 vezes. GG aparece 1 vez. Total de 12 vendas. A moda é M com 6 vendas, metade do total! Esta informação é útil: o gerente deve manter mais estoque do tamanho M, o mais procurado. É uma distribuição unimodal com apenas um valor mais frequente.',
+      color: 'from-yellow-500 to-orange-600'
+    },
+    correlation: {
+      title: 'Correlação',
+      formula: 'r = Cov(X,Y) / (σx × σy)',
+      explanation: 'Mede relação linear entre variáveis. Varia de -1 a +1. Positivo: ambas crescem. Negativo: uma cresce, outra decresce. Zero: sem relação.',
+      exampleTitle: 'Exemplo: Altura vs Peso',
+      exampleData: 'Altura: 160,165,170,175,180 | Peso: 55,60,68,75,80',
+      tableData: [
+        ['Pessoa', 'Alt(cm)', 'Peso(kg)'],
+        ['1', '160', '55'],
+        ['2', '165', '60'],
+        ['3', '170', '68'],
+        ['4', '175', '75'],
+        ['5', '180', '80'],
+        ['Média', '170', '67,6']
+      ],
+      steps: 'PASSO 1: Médias: altura=170cm, peso=67,6kg. PASSO 2: Desvios padrão: σx=7,07, σy=9,58. PASSO 3: Covariância: Cov=67,5. PASSO 4: Correlação: r=67,5/(7,07×9,58)=67,5/67,75=0,996. RESULTADO: r=0,996 (correlação positiva muito forte). INTERPRETAÇÃO: Relação linear quase perfeita. Maior altura associada a maior peso.',
+      audio: 'Calculando correlação entre altura e peso de 5 pessoas. Alturas: 160, 165, 170, 175 e 180 centímetros. Pesos: 55, 60, 68, 75 e 80 quilos. Médias: altura 170, peso 67,6. Desvios padrão: 7,07 para altura, 9,58 para peso. Covariância: 67,5. Correlação: 67,5 dividido por 7,07 vezes 9,58. Isso dá 67,5 dividido por 67,75, igual a 0,996. Esse valor indica correlação positiva quase perfeita! Quanto maior a altura, maior o peso. Variáveis altamente relacionadas.',
+      color: 'from-red-500 to-pink-600'
+    }
+  };
+
+  const speak = (text) => {
+    if (speaking) {
+      window.speechSynthesis.cancel();
+      setSpeaking(false);
+      return;
+    }
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = 'pt-BR';
+    utterance.rate = 0.85;
+    utterance.pitch = 1;
+    utterance.volume = 1;
+    
+    if (selectedVoice) {
+      utterance.voice = selectedVoice;
+    }
+
+    utterance.onstart = () => setSpeaking(true);
+    utterance.onend = () => setSpeaking(false);
+    utterance.onerror = () => setSpeaking(false);
+
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const currentTopic = topics[selectedTopic];
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 p-4 md:p-6">
+      <div className="max-w-6xl mx-auto">
+        <div className="text-center mb-6">
+          <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
+            📊 Estatística Descritiva com Áudio
+          </h1>
+          <p className="text-purple-200 text-sm md:text-base">
+            Aprenda com cálculos detalhados, tabelas e exemplos práticos
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-6">
+          {Object.entries(topics).map(([key, topic]) => (
+            <button
+              key={key}
+              onClick={() => {
+                setSelectedTopic(key);
+                setShowExample(false);
+              }}
+              className={`p-2 md:p-3 rounded-lg font-semibold text-xs md:text-sm transition-all transform hover:scale-105 ${
+                selectedTopic === key
+                  ? `bg-gradient-to-r ${topic.color} text-white shadow-lg`
+                  : 'bg-white/10 text-white hover:bg-white/20'
+              }`}
+            >
+              {topic.title}
+            </button>
+          ))}
+        </div>
+
+        <div className={`bg-gradient-to-r ${currentTopic.color} p-1 rounded-2xl shadow-2xl mb-6`}>
+          <div className="bg-slate-900 rounded-xl p-4 md:p-6">
+            <h2 className="text-xl md:text-2xl font-bold text-white mb-3">
+              {currentTopic.title}
+            </h2>
+            
+            <div className="bg-white/10 rounded-lg p-3 md:p-4 mb-4">
+              <p className="text-center text-lg md:text-2xl font-mono text-white">
+                {currentTopic.formula}
+              </p>
+            </div>
+
+            <div className="flex gap-2 mb-4">
+              <button
+                onClick={() => setShowExample(false)}
+                className={`flex-1 py-2 px-3 text-sm rounded-lg font-semibold transition-all ${
+                  !showExample ? 'bg-white text-purple-900' : 'bg-white/20 text-white'
+                }`}
+              >
+                Teoria
+              </button>
+              <button
+                onClick={() => setShowExample(true)}
+                className={`flex-1 py-2 px-3 text-sm rounded-lg font-semibold transition-all flex items-center justify-center gap-2 ${
+                  showExample ? 'bg-white text-purple-900' : 'bg-white/20 text-white'
+                }`}
+              >
+                <Calculator size={16} />
+                Cálculos
+              </button>
+            </div>
+
+            {!showExample ? (
+              <div className="bg-white/5 rounded-lg p-4 mb-4">
+                <p className="text-white text-sm md:text-base leading-relaxed">
+                  {currentTopic.explanation}
+                </p>
+              </div>
+            ) : (
+              <div className="bg-white/5 rounded-lg p-4 mb-4 space-y-4">
+                <h3 className="text-lg font-bold text-white">{currentTopic.exampleTitle}</h3>
+                <p className="text-purple-200 text-sm font-mono">{currentTopic.exampleData}</p>
+                
+                {currentTopic.tableData && (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-white text-xs md:text-sm border-collapse">
+                      <tbody>
+                        {currentTopic.tableData.map((row, i) => (
+                          <tr key={i} className={i === 0 ? 'bg-white/20 font-bold' : 'bg-white/5'}>
+                            {row.map((cell, j) => (
+                              <td key={j} className="border border-white/20 p-2 text-center">
+                                {cell}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+                
+                <div className="bg-white/10 rounded p-3">
+                  <pre className="text-white text-xs md:text-sm whitespace-pre-wrap font-mono">
+                    {currentTopic.steps}
+                  </pre>
+                </div>
+              </div>
+            )}
+
+            <div className="flex gap-3 mb-4">
+              <button
+                onClick={() => speak(showExample ? currentTopic.audio : currentTopic.explanation)}
+                className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-bold transition-all ${
+                  speaking ? 'bg-red-500 text-white' : 'bg-white text-purple-900'
+                }`}
+              >
+                {speaking ? (
+                  <>
+                    <Square size={20} fill="currentColor" />
+                    Parar
+                  </>
+                ) : (
+                  <>
+                    <Play size={20} fill="currentColor" />
+                    Ouvir {showExample ? 'Cálculos' : 'Teoria'}
+                  </>
+                )}
+              </button>
+            </div>
+
+            {voices.length > 0 && (
+              <div>
+                <label className="block text-white text-xs mb-2">
+                  🎙️ Voz ({voices.length} disponíveis):
+                </label>
+                <select
+                  value={selectedVoice?.name || ''}
+                  onChange={(e) => {
+                    const voice = voices.find(v => v.name === e.target.value);
+                    setSelectedVoice(voice);
+                  }}
+                  className="w-full bg-white/10 text-white text-xs rounded-lg p-2 border border-white/20"
+                >
+                  {voices.map((voice) => (
+                    <option key={voice.name} value={voice.name} className="bg-slate-900">
+                      {voice.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="bg-white/10 rounded-lg p-4 text-white">
+          <h3 className="font-bold mb-2 flex items-center gap-2 text-sm">
+            <Volume2 size={18} />
+            Como usar:
+          </h3>
+          <ul className="space-y-1 text-xs text-purple-200">
+            <li>• Escolha um conceito nos botões acima</li>
+            <li>• Veja a Teoria ou os Cálculos detalhados</li>
+            <li>• Use Ouvir para narração em português</li>
+            <li>• Troque a voz no seletor abaixo</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+}
